@@ -1,3 +1,6 @@
+
+// RegisterPost component
+
 import { useState } from 'react';
 
 function RegisterPost({ onAdd, titleRef }) {
