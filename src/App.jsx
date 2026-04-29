@@ -1,35 +1,62 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import PostCard from './components/PostCard';
+import RegisterPost from './components/RegisterPost';
+
+// Student: Ilir Bajrami | ID: 132717
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchPosts = () => {
+    setLoading(true);
+    setError(null);
+    fetch('https://jsonplaceholder.typicode.com/posts')
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to fetch');
+        return res.json();
+      })
+      .then(data => {
+        setPosts(data.map(post => ({
+          ...post,
+          featured: false,
+          category: "News"
+        })));
+        setLoading(false);
+      })
+      .catch(err => {
+        setError(err.message);
+        setLoading(false);
+      });
+  };
+
+  useEffect(() => { fetchPosts(); }, []);
+
+  const addPost = useCallback((newPost) => {
+    setPosts(prev => [...prev, { ...newPost, id: Date.now() }]);
+  }, []);
+
+  const totalCount = useMemo(() => posts.length, [posts]);
+
+  const titleRef = useRef(null);
+
+  if (loading) return <p>Loading posts...</p>;
+  if (error) return (
+    <div>
+      <p>Error: {error}</p>
+      <button onClick={fetchPosts}>Retry</button>
+    </div>
+  );
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <div style={{ padding: '20px', fontFamily: 'sans-serif', maxWidth: '800px', margin: '0 auto' }}>
+      <h1>Post Explorer</h1>
+      <p><strong>Total posts: {totalCount}</strong></p>
+      {posts.map(post => <PostCard key={post.id} post={post} />)}
+      <RegisterPost onAdd={addPost} titleRef={titleRef} />
+    </div>
+  );
 }
 
-export default App
+export default App;
